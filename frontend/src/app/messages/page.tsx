@@ -20,10 +20,15 @@ export default function MessagesPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        setLoading(false);
+      } else {
+        router.replace("/login");
+      }
     });
-  }, []);
+  }, [router]);
 
   const currentUserHandle = user?.email?.split("@")[0] || "student";
   const currentUserName = user?.user_metadata?.full_name || currentUserHandle;

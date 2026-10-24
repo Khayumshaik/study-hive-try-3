@@ -93,39 +93,37 @@ export default function StudyHivePage() {
   // Auth check
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        const handle = session.user.email?.split("@")[0] || "student";
-        const name = session.user.user_metadata?.full_name || handle;
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        const handle = currentUser.email?.split("@")[0] || "student";
+        const name = currentUser.user_metadata?.full_name || handle;
         setProfileName(name);
         setProfileHandle(handle);
+        setLoadingUser(false);
       } else {
-        setProfileName("Guest User");
-        setProfileHandle("guest");
+        router.replace("/login");
       }
-      setLoadingUser(false);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        const handle = session.user.email?.split("@")[0] || "student";
-        const name = session.user.user_metadata?.full_name || handle;
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        const handle = currentUser.email?.split("@")[0] || "student";
+        const name = currentUser.user_metadata?.full_name || handle;
         setProfileName(name);
         setProfileHandle(handle);
-      } else {
-        setProfileName("Guest User");
-        setProfileHandle("guest");
+        setLoadingUser(false);
       }
-      setLoadingUser(false);
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [router]);
 
   const currentUserHandle = user?.email?.split("@")[0] || profileHandle;
   const currentUserName = profileName || user?.user_metadata?.full_name || currentUserHandle;

@@ -44,14 +44,12 @@ export default function ProfileSettingsPage() {
         setBio(currentUser.user_metadata?.bio || "Student at StudyHive | Collaborating & learning.");
         setMajor(currentUser.user_metadata?.major || "Computer Science");
         setUniversity(currentUser.user_metadata?.university || "University Campus");
+        setLoading(false);
       } else {
-        setFullName("Guest Student");
-        setHandle("guest_user");
-        setBio("Guest Mode. Sign in to sync your profile across devices.");
+        router.replace("/login");
       }
-      setLoading(false);
     });
-  }, []);
+  }, [router]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
