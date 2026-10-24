@@ -59,9 +59,29 @@ function createMessageId(): string {
 export default function DirectMessages({
   currentUserHandle = "me",
 }: DirectMessagesProps) {
-  const [conversations, setConversations] = useState<ChatUser[]>([]);
+  const [conversations, setConversations] = useState<ChatUser[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem(`studyhive:dm:${currentUserHandle}`);
+      const parsed = raw ? JSON.parse(raw) : { conversations: [] };
+      return Array.isArray(parsed.conversations) ? parsed.conversations : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [activeUserId, setActiveUserId] = useState<string>("");
-  const [messagesMap, setMessagesMap] = useState<Record<string, ChatMessage[]>>({});
+  const [messagesMap, setMessagesMap] = useState<Record<string, ChatMessage[]>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const raw = localStorage.getItem(`studyhive:dm:${currentUserHandle}`);
+      const parsed = raw ? JSON.parse(raw) : { messagesMap: {} };
+      return parsed.messagesMap && typeof parsed.messagesMap === "object" ? parsed.messagesMap : {};
+    } catch {
+      return {};
+    }
+  });
+
   const [inputText, setInputText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
@@ -74,6 +94,16 @@ export default function DirectMessages({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem(
+        `studyhive:dm:${currentUserHandle}`,
+        JSON.stringify({ conversations, messagesMap })
+      );
+    } catch {}
+  }, [conversations, messagesMap, currentUserHandle]);
 
   const activeUser = conversations.find((c) => c.id === activeUserId) || null;
   const activeMessages = activeUser ? messagesMap[activeUser.id] || [] : [];

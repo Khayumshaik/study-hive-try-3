@@ -5,13 +5,15 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import LogoutButton from "@/logoutButton";
 import DirectMessages from "@/components/DirectMessages";
+import LatticeFlight from "@/components/ui/lattice-flight";
 import type { User } from "@supabase/supabase-js";
 import {
   Home,
   Compass,
   MessageSquare,
-  Zap,
   Settings,
+  ChevronsLeft,
+  Menu,
 } from "lucide-react";
 
 interface Post {
@@ -42,15 +44,6 @@ interface Community {
   joined: boolean;
 }
 
-interface DirectMessage {
-  id: string;
-  sender: string;
-  recipient: string;
-  text: string;
-  time: string;
-  imageUrl?: string;
-}
-
 let counter = 100;
 function makeId(prefix: string): string {
   counter += 1;
@@ -63,7 +56,8 @@ export default function StudyHivePage() {
   const [loadingUser, setLoadingUser] = useState(true);
 
   // Active view tab
-  const [activeTab, setActiveTab] = useState<"feed" | "spaces" | "messages" | "livechat">("feed");
+  const [activeTab, setActiveTab] = useState<"feed" | "spaces" | "messages">("feed");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [feedFilter, setFeedFilter] = useState<"RECENT" | "FOLLOWING" | "TRENDING">("RECENT");
 
   // Posts State (Cleared out dummy data)
@@ -91,12 +85,6 @@ export default function StudyHivePage() {
   // Direct Messaging State (For the floating drawer if needed)
   const [activeChatRecipient, setActiveChatRecipient] = useState<string>("");
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
-
-  // Live Chat State (Cleared, only kept the system welcome message)
-  const [liveChatMessages, setLiveChatMessages] = useState<DirectMessage[]>([
-    { id: "lc-1", sender: "System", recipient: "all", text: "Global study room is open. Say hi!", time: "Now" },
-  ]);
-  const [liveChatInput, setLiveChatInput] = useState("");
 
   // Profile info state
   const [profileName, setProfileName] = useState("Loading...");
@@ -259,23 +247,6 @@ export default function StudyHivePage() {
     );
   };
 
-  // Send Live Chat
-  const handleSendLiveChat = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!liveChatInput.trim()) return;
-
-    const newMsg: DirectMessage = {
-      id: makeId("lc"),
-      sender: currentUserHandle,
-      recipient: "all",
-      text: liveChatInput.trim(),
-      time: "Just now",
-    };
-
-    setLiveChatMessages((prev) => [...prev, newMsg]);
-    setLiveChatInput("");
-  };
-
   // Direct Message a user from anywhere
   const startDirectMessage = (handle: string) => {
     setActiveChatRecipient(handle);
@@ -298,20 +269,48 @@ export default function StudyHivePage() {
       : posts;
 
   return (
-    <div className="min-h-screen bg-black text-slate-100 flex font-sans antialiased">
+    <div className="relative min-h-screen bg-black text-slate-100 flex font-sans antialiased">
+      {/* LATTICE FLIGHT BACKGROUND */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <LatticeFlight
+          background="#000000"
+          baseColor="rgb(0, 255, 255)"
+          density={307}
+          speed={27}
+          thickness={4}
+          fog={100}
+          distance={3}
+        />
+      </div>
+
       {/* LEFT NAVIGATION SIDEBAR */}
-      <aside className="w-16 md:w-60 border-r border-[#262626] h-screen sticky top-0 flex flex-col justify-between py-5 px-3 md:px-4 bg-black select-none z-30">
+      <aside
+        className={`transition-all duration-300 border-r border-[#262626] h-screen sticky top-0 flex flex-col justify-between bg-black select-none z-30 ${
+          isSidebarOpen
+            ? "w-16 md:w-60 py-5 px-3 md:px-4"
+            : "w-0 overflow-hidden px-0 md:px-0 py-0 border-r-0"
+        }`}
+      >
         <div className="space-y-6">
-          <div
-            onClick={() => setActiveTab("feed")}
-            className="flex items-center space-x-3 px-2 py-1 cursor-pointer group"
-          >
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-lg font-bold">
-              🐝
+          <div className="flex items-center justify-between px-1">
+            <div
+              onClick={() => setActiveTab("feed")}
+              className="flex items-center space-x-3 py-1 cursor-pointer group"
+            >
+              <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-lg font-bold shrink-0">
+                🐝
+              </div>
+              <span className="hidden md:inline font-bold text-lg text-white group-hover:text-indigo-400 transition-colors">
+                StudyHive
+              </span>
             </div>
-            <span className="hidden md:inline font-bold text-lg text-white group-hover:text-indigo-400 transition-colors">
-              StudyHive
-            </span>
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              title="Hide sidebar"
+              className="p-1 text-slate-500 hover:text-white rounded-lg hover:bg-[#1a1a1a] transition-colors cursor-pointer shrink-0"
+            >
+              <ChevronsLeft className="w-5 h-5" />
+            </button>
           </div>
 
           <nav className="space-y-1">
@@ -343,16 +342,6 @@ export default function StudyHivePage() {
             >
               <MessageSquare className="w-5 h-5 shrink-0 text-indigo-400" />
               <span className="hidden md:inline">Direct Messages</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("livechat")}
-              className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
-                activeTab === "livechat" ? "bg-[#1f1f1f] text-white font-bold" : "text-slate-400 hover:text-white hover:bg-[#141414]"
-              }`}
-            >
-              <Zap className="w-5 h-5 shrink-0 text-amber-400" />
-              <span className="hidden md:inline">Live Chat</span>
             </button>
 
             <button
@@ -425,7 +414,7 @@ export default function StudyHivePage() {
         />
       ) : (
         <>
-          <div className="flex-1 flex justify-center overflow-y-auto max-h-screen">
+          <div className="relative z-10 flex-1 flex justify-center overflow-y-auto max-h-screen">
             <main className="w-full max-w-2xl px-4 py-6 space-y-6">
 
           {/* TAB 1: FEED & HOME VIEW */}
@@ -756,113 +745,21 @@ export default function StudyHivePage() {
             </div>
           )}
 
-          {/* TAB 4: LIVE CHAT ROOM */}
-          {activeTab === "livechat" && (
-            <div className="bg-[#121212] border border-[#262626] rounded-2xl h-[560px] flex flex-col overflow-hidden shadow-xl">
-              <div className="p-3 border-b border-[#262626] bg-[#161616] flex items-center justify-between">
-                <h3 className="text-xs font-bold text-white">Live Public Chat Room</h3>
-                <span className="text-[10px] text-emerald-400">● Live</span>
-              </div>
-
-              <div className="flex-1 p-4 overflow-y-auto space-y-2 bg-black">
-                {liveChatMessages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex ${msg.sender === currentUserHandle ? "justify-end" : "justify-start"}`}
-                  >
-                    <div
-                      className={`max-w-[75%] rounded-xl p-2.5 text-xs ${
-                        msg.sender === currentUserHandle
-                          ? "bg-indigo-600 text-white"
-                          : "bg-[#222] text-slate-200"
-                      }`}
-                    >
-                      <span className="block text-[10px] font-bold text-indigo-300">@{msg.sender}</span>
-                      <p>{msg.text}</p>
-                      <span className="block text-[8px] opacity-60 text-right mt-1">{msg.time}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <form onSubmit={handleSendLiveChat} className="p-2.5 border-t border-[#262626] bg-[#161616] flex items-center space-x-2">
-                <input
-                  type="text"
-                  value={liveChatInput}
-                  onChange={(e) => setLiveChatInput(e.target.value)}
-                  placeholder="Drop a note to the live room..."
-                  className="flex-1 bg-black border border-[#333] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
-                />
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg cursor-pointer"
-                >
-                  Send
-                </button>
-              </form>
-            </div>
-          )}
-
         </main>
       </div>
 
-      {/* RIGHT SIDEBAR */}
-      <aside className="hidden lg:block w-72 h-screen sticky top-0 p-5 space-y-5 border-l border-[#262626] select-none">
-        <div
-          onClick={() => router.push("/settings")}
-          className="bg-[#121212] border border-[#262626] hover:border-indigo-500/50 rounded-xl p-3 cursor-pointer transition-colors group"
-          title="Open Profile Settings Page"
-        >
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Your Account</p>
-            <span className="text-xs text-indigo-400 group-hover:underline">Settings ⚙️</span>
-          </div>
-          <p className="text-xs font-bold text-white mt-1 group-hover:text-indigo-300 transition-colors">
-            {profileName} (@{currentUserHandle})
-          </p>
-          <p className="text-[11px] text-slate-400 truncate">{user?.email || "Guest Mode"}</p>
-        </div>
-
-        <div className="bg-[#121212] border border-[#262626] rounded-xl p-3 space-y-2">
-          <p className="text-xs font-bold text-white">Direct Messages</p>
-          <p className="text-[11px] text-slate-400">Open full 3-column chat window:</p>
-          <button
-            onClick={() => setActiveTab("messages")}
-            className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center justify-center space-x-2 shadow-md shadow-indigo-600/20"
-          >
-            <MessageSquare className="w-4 h-4" />
-            <span>Open Direct Messages</span>
-          </button>
-        </div>
-
-        <div className="bg-[#121212] border border-[#262626] rounded-xl p-3 space-y-2">
-          <p className="text-xs font-bold text-white">Quick Actions</p>
-          <div className="space-y-1.5">
-            <button
-              onClick={() => setActiveTab("messages")}
-              className="w-full text-left px-2.5 py-1.5 bg-black hover:bg-[#1a1a1a] rounded-lg text-xs text-indigo-400 border border-[#282828] cursor-pointer flex items-center space-x-2"
-            >
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span>💬 Direct Messages (3-Column)</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("spaces")}
-              className="w-full text-left px-2.5 py-1.5 bg-black hover:bg-[#1a1a1a] rounded-lg text-xs text-purple-400 border border-[#282828] cursor-pointer flex items-center space-x-2"
-            >
-              <Compass className="w-3.5 h-3.5" />
-              <span>🪐 View / Create Communities</span>
-            </button>
-            <button
-              onClick={() => router.push("/settings")}
-              className="w-full text-left px-2.5 py-1.5 bg-black hover:bg-[#1a1a1a] rounded-lg text-xs text-slate-300 border border-[#282828] cursor-pointer flex items-center space-x-2"
-            >
-              <Settings className="w-3.5 h-3.5" />
-              <span>⚙️ Profile Settings Page</span>
-            </button>
-          </div>
-        </div>
-      </aside>
       </>
+      )}
+
+      {/* Floating Open-Sidebar Button (when hidden) */}
+      {!isSidebarOpen && (
+        <button
+          onClick={() => setIsSidebarOpen(true)}
+          title="Show sidebar"
+          className="fixed top-4 left-4 z-40 bg-[#1a1a1a] hover:bg-[#262626] border border-[#333] text-slate-300 hover:text-white p-2 rounded-xl shadow-xl transition-colors cursor-pointer"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
       )}
 
       {/* Floating Quick Messages Button */}
