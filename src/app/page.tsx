@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import LogoutButton from "@/logoutButton";
 import DirectMessages from "@/components/DirectMessages";
+import DiscordCommunities from "@/components/DiscordCommunities";
 import LatticeFlight from "@/components/ui/lattice-flight";
 import GlimmerVale from "@/components/ui/glimmer-vale";
 import type { User } from "@supabase/supabase-js";
@@ -35,16 +36,6 @@ interface Post {
   }[];
 }
 
-interface Community {
-  id: string;
-  name: string;
-  category: string;
-  description: string;
-  membersCount: number;
-  founder: string;
-  joined: boolean;
-}
-
 let counter = 100;
 function makeId(prefix: string): string {
   counter += 1;
@@ -58,6 +49,7 @@ export default function StudyHivePage() {
 
   // Active view tab
   const [activeTab, setActiveTab] = useState<"feed" | "spaces" | "messages">("feed");
+  const [selectedCommunityId, setSelectedCommunityId] = useState<string>("cs-dev");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [feedFilter, setFeedFilter] = useState<"RECENT" | "FOLLOWING" | "TRENDING">("RECENT");
   const [wallpaper, setWallpaper] = useState<"none" | "lattice" | "glimmer">("lattice");
@@ -74,15 +66,6 @@ export default function StudyHivePage() {
   // Comment input state
   const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
   const [commentInput, setCommentInput] = useState("");
-
-  // Communities State (Cleared out dummy data)
-  const [communities, setCommunities] = useState<Community[]>([]);
-
-  // New Community Form State
-  const [showCreateCommunity, setShowCreateCommunity] = useState(false);
-  const [communityName, setCommunityName] = useState("");
-  const [communityCategory, setCommunityCategory] = useState("TECH");
-  const [communityDesc, setCommunityDesc] = useState("");
 
   // Direct Messaging State (For the floating drawer if needed)
   const [activeChatRecipient, setActiveChatRecipient] = useState<string>("");
@@ -211,44 +194,6 @@ export default function StudyHivePage() {
       })
     );
     setCommentInput("");
-  };
-
-  // Create Community
-  const handleCreateCommunity = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!communityName.trim()) return;
-
-    const newComm: Community = {
-      id: makeId("comm"),
-      name: communityName.trim(),
-      category: communityCategory.toUpperCase(),
-      description: communityDesc.trim() || "New public study community.",
-      membersCount: 1,
-      founder: currentUserHandle,
-      joined: true,
-    };
-
-    setCommunities([newComm, ...communities]);
-    setCommunityName("");
-    setCommunityDesc("");
-    setShowCreateCommunity(false);
-  };
-
-  // Join / Leave Community Toggle
-  const handleToggleJoin = (commId: string) => {
-    setCommunities((prev) =>
-      prev.map((c) => {
-        if (c.id === commId) {
-          const isJoined = c.joined;
-          return {
-            ...c,
-            joined: !isJoined,
-            membersCount: isJoined ? c.membersCount - 1 : c.membersCount + 1,
-          };
-        }
-        return c;
-      })
-    );
   };
 
   // Direct Message a user from anywhere
@@ -426,10 +371,43 @@ export default function StudyHivePage() {
           currentUserName={currentUserName}
           onBackToFeed={() => setActiveTab("feed")}
         />
+      ) : activeTab === "spaces" ? (
+        <DiscordCommunities
+          currentUserHandle={currentUserHandle}
+          currentUserName={profileName || currentUserName}
+          initialCommunityId={selectedCommunityId}
+          onBackToFeed={() => setActiveTab("feed")}
+        />
       ) : (
         <>
           <div className="relative z-10 flex-1 flex justify-center overflow-y-auto max-h-screen">
             <main className="w-full max-w-2xl px-4 py-6 space-y-6">
+
+              {/* Communities Discovery Banner */}
+              <div
+                onClick={() => setActiveTab("spaces")}
+                className="bg-gradient-to-r from-indigo-950/50 via-purple-950/40 to-slate-900 border border-indigo-500/30 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:border-indigo-400/50 transition-all group shadow-md"
+              >
+                <div className="flex items-center space-x-3.5">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-xl group-hover:scale-105 transition-transform">
+                    🏛️
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors flex items-center space-x-1.5">
+                      <span>Discord-Style Study Communities</span>
+                      <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full font-bold">
+                        OPEN
+                      </span>
+                    </h4>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Join #rules, #announcements, #welcome, #general, and voice study rooms.
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-indigo-400 group-hover:translate-x-1 transition-transform">
+                  Open Server →
+                </span>
+              </div>
 
           {/* TAB 1: FEED & HOME VIEW */}
           {activeTab === "feed" && (
@@ -654,109 +632,6 @@ export default function StudyHivePage() {
                 )}
               </div>
             </>
-          )}
-
-          {/* TAB 2: COMMUNITIES (SPACES) */}
-          {activeTab === "spaces" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-[#262626]">
-                <div>
-                  <h2 className="text-lg font-bold text-white">Communities (Spaces)</h2>
-                  <p className="text-xs text-slate-400">Join any community or create one</p>
-                </div>
-                <button
-                  onClick={() => setShowCreateCommunity(true)}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl shadow cursor-pointer"
-                >
-                  + Create Community
-                </button>
-              </div>
-
-              {showCreateCommunity && (
-                <form
-                  onSubmit={handleCreateCommunity}
-                  className="bg-[#121212] border border-purple-500/40 rounded-2xl p-4 space-y-3"
-                >
-                  <h3 className="text-xs font-bold text-purple-400 uppercase">New Community Details</h3>
-                  <input
-                    type="text"
-                    required
-                    value={communityName}
-                    onChange={(e) => setCommunityName(e.target.value)}
-                    placeholder="Community Name (e.g. Next.js Builders)"
-                    className="w-full bg-black border border-[#333] rounded-lg p-2 text-xs text-white focus:outline-none focus:border-purple-500"
-                  />
-                  <input
-                    type="text"
-                    value={communityCategory}
-                    onChange={(e) => setCommunityCategory(e.target.value)}
-                    placeholder="Category (e.g. TECH, MATH, GENERAL)"
-                    className="w-full bg-black border border-[#333] rounded-lg p-2 text-xs text-white focus:outline-none focus:border-purple-500"
-                  />
-                  <textarea
-                    rows={2}
-                    value={communityDesc}
-                    onChange={(e) => setCommunityDesc(e.target.value)}
-                    placeholder="Description..."
-                    className="w-full bg-black border border-[#333] rounded-lg p-2 text-xs text-white focus:outline-none focus:border-purple-500"
-                  />
-                  <div className="flex items-center justify-end space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowCreateCommunity(false)}
-                      className="px-3 py-1.5 text-xs text-slate-400 hover:text-white"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-lg cursor-pointer"
-                    >
-                      Create Now
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              <div className="space-y-3">
-                {communities.length === 0 ? (
-                  <div className="text-center py-12 border border-dashed border-[#262626] rounded-2xl p-6 text-slate-500 text-sm">
-                    No communities yet. Create the first one!
-                  </div>
-                ) : (
-                  communities.map((comm) => (
-                    <div
-                      key={comm.id}
-                      className="bg-[#121212] border border-[#262626] rounded-2xl p-4 flex items-center justify-between"
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-[10px] font-bold text-purple-400 bg-purple-950/40 border border-purple-500/30 px-2 py-0.5 rounded-md">
-                            {comm.category}
-                          </span>
-                          <h4 className="text-sm font-bold text-white">{comm.name}</h4>
-                        </div>
-                        <p className="text-xs text-slate-400">{comm.description}</p>
-                        <p className="text-[10px] text-slate-500">
-                          {comm.membersCount} members • by @{comm.founder}
-                        </p>
-                      </div>
-
-                      <button
-                        onClick={() => handleToggleJoin(comm.id)}
-                        className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                          comm.joined
-                            ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                            : "bg-purple-600 hover:bg-purple-500 text-white"
-                        }`}
-                      >
-                        {comm.joined ? "Joined ✓" : "Join"}
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
           )}
 
         </main>
