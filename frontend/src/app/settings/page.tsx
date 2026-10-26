@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import LogoutButton from "@/logoutButton";
+import LatticeFlight from "@/components/ui/lattice-flight";
+import GlimmerVale from "@/components/ui/glimmer-vale";
 import type { User } from "@supabase/supabase-js";
 
 export default function ProfileSettingsPage() {
@@ -18,6 +20,7 @@ export default function ProfileSettingsPage() {
   const [major, setMajor] = useState("Computer Science");
   const [university, setUniversity] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
+  const [wallpaper, setWallpaper] = useState<"none" | "lattice" | "glimmer">("lattice");
   const [allowOpenDMs, setAllowOpenDMs] = useState(true);
   const [showOnlineStatus, setShowOnlineStatus] = useState(true);
 
@@ -44,6 +47,7 @@ export default function ProfileSettingsPage() {
         setBio(currentUser.user_metadata?.bio || "Student at StudyHive | Collaborating & learning.");
         setMajor(currentUser.user_metadata?.major || "Computer Science");
         setUniversity(currentUser.user_metadata?.university || "University Campus");
+        setWallpaper(currentUser.user_metadata?.wallpaper || "lattice");
         setLoading(false);
       } else {
         router.replace("/login");
@@ -64,6 +68,7 @@ export default function ProfileSettingsPage() {
             bio,
             major,
             university,
+            wallpaper,
             allowOpenDMs,
           },
         });
@@ -114,7 +119,30 @@ export default function ProfileSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-slate-100 flex font-sans antialiased">
+    <div className="min-h-screen bg-black text-slate-100 flex font-sans antialiased relative">
+      {/* WALLPAPER BACKGROUND */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        {wallpaper === "lattice" && (
+          <LatticeFlight
+            background="#000000"
+            baseColor="rgb(0, 255, 255)"
+            density={307}
+            speed={27}
+            thickness={4}
+            fog={100}
+            distance={3}
+          />
+        )}
+        {wallpaper === "glimmer" && (
+          <GlimmerVale 
+            speed={50}
+            scale={100}
+            density={60}
+            sparkle={50}
+          />
+        )}
+      </div>
+
       {/* Left Navigation Bar (Consistent with Home Page) */}
       <aside className="w-16 md:w-60 border-r border-[#262626] h-screen sticky top-0 flex flex-col justify-between py-5 px-3 md:px-4 bg-black select-none z-30">
         <div className="space-y-6">
@@ -181,7 +209,7 @@ export default function ProfileSettingsPage() {
       </aside>
 
       {/* Main Settings Content */}
-      <main className="flex-1 overflow-y-auto max-h-screen py-8 px-4 sm:px-8 max-w-4xl">
+      <main className="relative z-10 flex-1 overflow-y-auto max-h-screen py-8 px-4 sm:px-8 max-w-4xl">
         <div className="space-y-6">
           {/* Top Header & Breadcrumb */}
           <div className="flex items-center justify-between border-b border-[#262626] pb-5">
@@ -348,6 +376,33 @@ export default function ProfileSettingsPage() {
                   placeholder="https://github.com/..."
                   className="w-full bg-black border border-[#333] rounded-xl p-3 text-xs text-white focus:outline-none focus:border-indigo-500"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+                  Dashboard Wallpaper
+                </label>
+                <div className="grid grid-cols-3 gap-3 mt-2">
+                  {[
+                    { id: "none", name: "No Wallpaper", icon: "🚫" },
+                    { id: "lattice", name: "Lattice Flight", icon: "🕸️" },
+                    { id: "glimmer", name: "Glimmer Vale", icon: "✨" },
+                  ].map((wp) => (
+                    <button
+                      key={wp.id}
+                      type="button"
+                      onClick={() => setWallpaper(wp.id as any)}
+                      className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all cursor-pointer ${
+                        wallpaper === wp.id
+                          ? "bg-indigo-600/20 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.2)]"
+                          : "bg-black border-[#333] hover:border-slate-500"
+                      }`}
+                    >
+                      <span className="text-xl mb-1">{wp.icon}</span>
+                      <span className="text-[10px] font-bold text-slate-300">{wp.name}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {saveSuccess && (

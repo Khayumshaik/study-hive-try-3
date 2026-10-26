@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import LogoutButton from "@/logoutButton";
 import DirectMessages from "@/components/DirectMessages";
 import LatticeFlight from "@/components/ui/lattice-flight";
+import GlimmerVale from "@/components/ui/glimmer-vale";
 import type { User } from "@supabase/supabase-js";
 import {
   Home,
@@ -59,6 +60,7 @@ export default function StudyHivePage() {
   const [activeTab, setActiveTab] = useState<"feed" | "spaces" | "messages">("feed");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [feedFilter, setFeedFilter] = useState<"RECENT" | "FOLLOWING" | "TRENDING">("RECENT");
+  const [wallpaper, setWallpaper] = useState<"none" | "lattice" | "glimmer">("lattice");
 
   // Posts State (Cleared out dummy data)
   const [posts, setPosts] = useState<Post[]>([]);
@@ -98,8 +100,10 @@ export default function StudyHivePage() {
       if (currentUser) {
         const handle = currentUser.email?.split("@")[0] || "student";
         const name = currentUser.user_metadata?.full_name || handle;
+        const wp = currentUser.user_metadata?.wallpaper || "lattice";
         setProfileName(name);
         setProfileHandle(handle);
+        setWallpaper(wp);
         setLoadingUser(false);
       } else {
         router.replace("/login");
@@ -114,8 +118,10 @@ export default function StudyHivePage() {
       if (currentUser) {
         const handle = currentUser.email?.split("@")[0] || "student";
         const name = currentUser.user_metadata?.full_name || handle;
+        const wp = currentUser.user_metadata?.wallpaper || "lattice";
         setProfileName(name);
         setProfileHandle(handle);
+        setWallpaper(wp);
         setLoadingUser(false);
       }
     });
@@ -268,17 +274,27 @@ export default function StudyHivePage() {
 
   return (
     <div className="relative min-h-screen bg-black text-slate-100 flex font-sans antialiased">
-      {/* LATTICE FLIGHT BACKGROUND */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <LatticeFlight
-          background="#000000"
-          baseColor="rgb(0, 255, 255)"
-          density={307}
-          speed={27}
-          thickness={4}
-          fog={100}
-          distance={3}
-        />
+      {/* WALLPAPER BACKGROUND */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        {wallpaper === "lattice" && (
+          <LatticeFlight
+            background="#000000"
+            baseColor="rgb(0, 255, 255)"
+            density={307}
+            speed={27}
+            thickness={4}
+            fog={100}
+            distance={3}
+          />
+        )}
+        {wallpaper === "glimmer" && (
+          <GlimmerVale 
+            speed={50}
+            scale={100}
+            density={60}
+            sparkle={50}
+          />
+        )}
       </div>
 
       {/* LEFT NAVIGATION SIDEBAR */}
